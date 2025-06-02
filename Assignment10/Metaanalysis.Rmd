@@ -1,0 +1,100 @@
+---
+title: "Assignment 10"
+author: "Nhu Ho"
+date: "2025-06-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(readxl)
+library(meta)
+library(dplyr)
+library(ggplot2)
+```
+
+## 1. Load and Inspect the Data
+
+```{r}
+data <- read_excel("/Users/hoangnhu/Downloads/metaanalysis_data.xlsx")
+head(data)
+str(data)
+```
+
+## 2. Meta-analysis: Calculating Effect Sizes
+
+I assume boys are the experimental group and girls the control group.
+
+```{r}
+m <- metacont(n.e = data$N_boys,
+                   mean.e = data$Mean_boys_play_male,
+                   sd.e = data$SD_boys_play_male,
+                   n.c = data$N_girls,
+                   mean.c = data$Mean_girls_play_male,
+                   sd.c = data$SD_girls_play_male,
+                   data = data,
+                   studlab = data$Study,
+                   common = TRUE,
+                   random = TRUE)
+summary(m)
+
+```
+
+## 3. Forest Plot
+
+```{r}
+m %>% forest(sortvar=TE)
+```
+
+## 4. Funnel Plot (Basic)
+
+```{r}
+m %>% funnel()
+```
+
+## 5. Funnel Plot (Contour-enhanced)
+
+```{r}
+contour_levels <- c(0.90, 0.95, 0.99)
+contour_colors <- c("darkblue", "blue", "lightblue")
+funnel(m, contour = contour_levels, col.contour = contour_colors)
+legend("topright", c("p < 0.10", "p < 0.05", "p < 0.01"), bty = "n", fill = contour_colors)
+```
+
+## 6. Meta-regression: Does Method or Quality Affect Results?
+
+```{r}
+# Replace these with correct variable names from your dataset
+m %>% metareg(~ `Neutral toys` + `Parent present` + Setting + `NOS score`)
+```
+
+## 7. Meta-regression: Does Author Gender Affect the Results?
+
+```{r}
+m$data$Author_gender_ratio <- m$data$`Female authors` / 
+  (m$data$`Female authors` + m$data$`Male authors`)
+
+m %>% metareg(~ Author_gender_ratio)
+```
+
+## 8. Interpretation
+
+- Combined Effects:
+  - The combined result using a random-effects model showed a statistically significant difference (MD = 94.78, p < 0.0001), with boys exhibiting higher play behavior scores.
+  - There was very high heterogeneity among the studies (I^2 = 88.0%).
+
+- Forest Plot:
+  - The forest plot shows the Mean Difference (MD) for each study and the overall combined result. It illustrates considerable variation in results across individual studies.
+
+- Funnel Plot:
+  - The funnel plot showed asymmetry, suggesting potential publication bias or other factors contributing to heterogeneity. Studies appeared to be more concentrated on the side with positive and statistically significant results.
+
+- Meta-regression: Effect of Methods/Quality:
+  - Study methodology and quality factors (NOS score) explained a portion of the heterogeneity (approximately 22.69%).
+  - Specifically, the presence of Neutral toys and the NOS score (study quality score) significantly influenced the results.
+
+- Meta-regression: Effect of Author Gender:
+  - The gender ratio of authors did not significantly affect the study results (p = 0.7416).
+
+## References
+- Using the assignment 10 of teacher's code
+- Using ChatGPT to fix my error code for part 7
